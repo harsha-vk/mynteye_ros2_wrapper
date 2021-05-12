@@ -1,0 +1,37 @@
+mynteye_raw_data:
+  ros_parameters:
+    # request_index range: {0, 1} => {(Resolution: 752x480, Format: YUYV), (Resolution: 376x240, Format: YUYV)}
+    request_index: 0
+
+    ## If not sure, leave it to Default setting -1
+    # gain range: [0,48]
+    gain: -1 # Typical 24
+    # brightness range: [0,240]
+    brightness: -1 # Typical 120
+    # contrast range: [0,255]
+    contrast: -1 # Typical 116
+    # frame_rate range: {10,15,20,25,30,35,40,45,50,55,60}
+    frame_rate: -1 # Typical 25
+    # imu_frequency range: {100,200,250,333,500}
+    imu_frequency: -1 # Typical 200
+    # exposure_mode range; {0, 1} => {auto-exposure, manual-exposure}
+    exposure_mode: -1 # Typical 0
+    # max_gain range: [0,48]
+    max_gain: -1 # Typical 48
+    # max_exposure_time range: [0,240]
+    max_exposure: -1 # Typical 240
+    # desired_brightness range: [0,255]
+    desired_brightness: -1 # Typical 192
+    # ir_control range: [0,160]
+    ir_control: -1 # Typical 0
+    # hdr_mode: {0, 1} => {normal, WDR}
+    hdr_mode: -1 # Typical 0
+    # accel_range range: {4,8,16,32}
+    accel_range: -1 # Typical 8
+    # gyro_range range: {500,1000,2000,4000}
+    gyro_range: -1 # Typical 1000
+
+    # qos_length range: [5, 15]
+    qos_length: 7 # Typical 7
+    # ros_framerate_cut range: [1, 6]
+    ros_framerate_cut: 2 # Typical 2
