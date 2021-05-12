@@ -272,27 +272,20 @@ class MynteyeRawData : public rclcpp::Node
                                             ++motion_count_;
                                             if (motion_count_ > 50 && data.imu)
                                             {
-                                                if (data.imu)
+                                                if (data.imu->flag == 1) // accelerometer
+                                                {  
+                                                    imu_accel_ = data.imu;
+                                                    publishImuBySync();
+                                                }
+                                                else if (data.imu->flag == 2) // gyroscope
                                                 {
-                                                    if (data.imu->flag == 1) // accelerometer
-                                                    {  
-                                                        imu_accel_ = data.imu;
-                                                        publishImuBySync();
-                                                    }
-                                                    else if (data.imu->flag == 2) // gyroscope
-                                                    {
-                                                        imu_gyro_ = data.imu;
-                                                        publishImuBySync();
-                                                    }
-                                                    else
-                                                    {
-                                                        publishImu(data, stamp);
-                                                        publishTemperature(data.imu->temperature, stamp);
-                                                    }
+                                                    imu_gyro_ = data.imu;
+                                                    publishImuBySync();
                                                 }
                                                 else
                                                 {
-                                                    RCLCPP_WARN(this->get_logger(), "Motion data is empty");
+                                                    publishImu(data, stamp);
+                                                    publishTemperature(data.imu->temperature, stamp);
                                                 }
                                                 rclcpp::Rate rate(std::chrono::milliseconds(1));
                                                 rate.sleep();
