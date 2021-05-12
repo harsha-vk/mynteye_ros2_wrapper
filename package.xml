@@ -4,7 +4,7 @@
   <name>mynteye_ros2_wrapper</name>
   <version>0.0.0</version>
   <description>mynteye ros2 wrapper</description>
-  <maintainer>Harsha Vardhan Koganti</maintainer>
+  <maintainer email="you@email.com">Harsha Vardhan Koganti</maintainer>
   <license>GPLv3</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
