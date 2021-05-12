@@ -19,8 +19,6 @@ find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(cv_bridge REQUIRED)
-
-set(OpenCV_DIR "$HOME/.local/opencv_3.4.1")
 find_package(OpenCV REQUIRED)
 find_package(mynteye REQUIRED)
 
