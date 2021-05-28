@@ -68,7 +68,7 @@ Open new tab in terminal to run mynteye camera.
 ```bash
 cd dev_ws
 . install/setup.bash
-ros2 launch mynteye.launch.py
+ros2 launch mynteye_ros2_wrapper mynteye.launch.py
 ```
 
 ## Calibrate MYNT EYE
@@ -78,5 +78,5 @@ Open new tab in terminal to run mynteye calibration.
 ```bash
 cd dev_ws
 . install/setup.bash
-ros2 launch mynteye_calib.launch.py
+ros2 launch mynteye_ros2_wrapper mynteye_calib.launch.py
 ```
