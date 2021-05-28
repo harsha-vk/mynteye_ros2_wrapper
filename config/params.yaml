@@ -1,37 +1,110 @@
+mynteye_calibration:
+  ros__parameters:
+    qos_length: 10
+    corners_x: 9
+    corners_y: 6
+    samples_count: 20
+    to_calibrate: stereo_images
+    window_size: 3
 mynteye_raw_data:
-  ros_parameters:
-    # request_index range: {0, 1} => {(Resolution: 752x480, Format: YUYV), (Resolution: 376x240, Format: YUYV)}
+  ros__parameters:
+    accel_range: -1
+    brightness: -1
+    contrast: -1
+    desired_brightness: -1
+    exposure_mode: -1
+    frame_rate: -1
+    gain: -1
+    gyro_range: -1
+    hdr_mode: -1
+    imu_frequency: -1
+    ir_control: -1
+    max_exposure: -1
+    max_gain: -1
+    qos_length: 10
     request_index: 0
-
-    ## If not sure, leave it to Default setting -1
-    # gain range: [0,48]
-    gain: -1 # Typical 24
-    # brightness range: [0,240]
-    brightness: -1 # Typical 120
-    # contrast range: [0,255]
-    contrast: -1 # Typical 116
-    # frame_rate range: {10,15,20,25,30,35,40,45,50,55,60}
-    frame_rate: -1 # Typical 25
-    # imu_frequency range: {100,200,250,333,500}
-    imu_frequency: -1 # Typical 200
-    # exposure_mode range; {0, 1} => {auto-exposure, manual-exposure}
-    exposure_mode: -1 # Typical 0
-    # max_gain range: [0,48]
-    max_gain: -1 # Typical 48
-    # max_exposure_time range: [0,240]
-    max_exposure: -1 # Typical 240
-    # desired_brightness range: [0,255]
-    desired_brightness: -1 # Typical 192
-    # ir_control range: [0,160]
-    ir_control: -1 # Typical 0
-    # hdr_mode: {0, 1} => {normal, WDR}
-    hdr_mode: -1 # Typical 0
-    # accel_range range: {4,8,16,32}
-    accel_range: -1 # Typical 8
-    # gyro_range range: {500,1000,2000,4000}
-    gyro_range: -1 # Typical 1000
-
-    # qos_length range: [5, 15]
-    qos_length: 7 # Typical 7
-    # ros_framerate_cut range: [1, 6]
-    ros_framerate_cut: 2 # Typical 2
+mynteye_rectification:
+  ros__parameters:
+    qos_length: 10
+    on_display: false
+    camera_info:
+      left:
+        D:
+        - -0.35427931045735417
+        - 0.1833278037442886
+        - -0.0003377288918229325
+        - 0.0009093907317570968
+        - -0.05666766350448252
+        K:
+        - 369.53727114881633
+        - 0.0
+        - 379.24397422686894
+        - 0.0
+        - 370.01231266904057
+        - 240.73316041548586
+        - 0.0
+        - 0.0
+        - 1.0
+        P:
+        - 351.0986355
+        - 0.0
+        - 380.4098477959633
+        - 0.0
+        - 0.0
+        - 351.0986355
+        - 238.51000186800957
+        - 0.0
+        - 0.0
+        - 0.0
+        - 1.0
+        - 0.0
+        R:
+        - 0.9998643211064276
+        - 0.015151331818408427
+        - -0.006463476039346686
+        - -0.015184485405734357
+        - 0.999871643680816
+        - -0.0051115130818775905
+        - 0.006385200180555474
+        - 0.00520896411502794
+        - 0.999966047379361
+      right:
+        D:
+        - -0.36426366346863776
+        - 0.22263767768013082
+        - -0.0008120794187701401
+        - 5.995409620943098e-05
+        - -0.10098469548846307
+        K:
+        - 370.8122402042362
+        - 0.0
+        - 374.65065931301393
+        - 0.0
+        - 370.9426610373959
+        - 246.51063151433368
+        - 0.0
+        - 0.0
+        - 1.0
+        P:
+        - 351.0986355
+        - 0.0
+        - 380.4098477959633
+        - -784.3765403363598
+        - 0.0
+        - 351.0986355
+        - 238.51000186800957
+        - 0.0
+        - 0.0
+        - 0.0
+        - 1.0
+        - 0.0
+        R:
+        - 0.9998985767652628
+        - 0.013532973693758759
+        - 0.004437883032034321
+        - -0.013555695385604177
+        - 0.9998949552153569
+        - 0.005130463672240223
+        - -0.004367986425653742
+        - -0.005190101914558075
+        - 0.9999769915036555

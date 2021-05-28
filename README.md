@@ -9,12 +9,12 @@ This Repository contains ROS2 wrapper for MYNT EYE stereo camera.
 ## Prerequisites
 
 - Operating System: Ubuntu 18.04
-- ROS2 Dashing Diademata
+- ROS2 Eloquent Elusor
 - MYNT EYE S SDK
 
 ### Installing Prerequisites
 
-1. Install ROS2 Dashing Diademata by following instructions below.
+1. Install ROS2 Eloquent Elusor by following instructions below.
 
     ```bash
     sudo apt-get update && sudo apt-get install locales
@@ -27,7 +27,7 @@ This Repository contains ROS2 wrapper for MYNT EYE stereo camera.
     sudo sh -c 'echo "deb [arch=$(dpkg --print-architecture)] http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" > /etc/apt/sources.list.d/ros2-latest.list'
 
     sudo apt-get update
-    sudo apt-get install ros-dashing-desktop python3-colcon-common-extensions python3-rosdep
+    sudo apt-get install ros-eloquent-desktop python3-colcon-common-extensions python3-rosdep
     sudo apt-get install python3-pip
     pip3 install -U argcomplete
 
@@ -63,18 +63,20 @@ colcon build
 
 ## Run MYNT EYE ROS2 Wrapper
 
-1. Open new tab in terminal to run 'mynteye_raw_data' Publisher Node.
+Open new tab in terminal to run mynteye camera.
+
+```bash
+cd dev_ws
+. install/setup.bash
+ros2 launch mynteye.launch.py
+```
+
+## Calibrate MYNT EYE
+
+Open new tab in terminal to run mynteye calibration.
 
     ```bash
     cd dev_ws
     . install/setup.bash
-    ros2 run mynteye_ros2_wrapper mynteye_raw_data
-    ```
-
-2. Open another new tab in terminal to run 'display_data.py' Subscriber Node.
-
-    ```bash
-    cd dev_ws
-    . install/setup.bash
-    ros2 run mynteye_ros2_wrapper display_data.py
+    ros2 launch mynteye_calib.launch.py
     ```

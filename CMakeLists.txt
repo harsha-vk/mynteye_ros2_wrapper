@@ -41,7 +41,11 @@ ament_python_install_package(${PROJECT_NAME})
 
 # Install Python executables
 install(PROGRAMS
-  scripts/display_data.py
+  scripts/mynteye_calibration.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+install(PROGRAMS
+  scripts/mynteye_rectification.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

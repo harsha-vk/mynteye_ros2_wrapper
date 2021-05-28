@@ -22,15 +22,23 @@
 #include "mynteye/device/device.h"
 
 #define GRAVITY 9.8
-#define QOS_LENGTH 7
-#define ROS_FRAMERATE_CUT 2
-#define MATCH_CHECK_THRESHOLD 3
+#define QOS_LENGTH 10
 
 using namespace mynteye;
 
 class MynteyeRawData : public rclcpp::Node
 {
   public:
+    MynteyeRawData() : Node("mynteye_raw_data"), qos_profile_(0)
+    {
+        unit_hard_time_ *= 10;
+        rosParameters();
+        initDevice();
+        createPublishers();
+        int frame_rate = device->GetOptionValue(Option::FRAME_RATE);
+        timer_ = this->create_wall_timer(std::chrono::milliseconds(1000 / frame_rate), std::bind(&MynteyeRawData::publishTopics, this));
+    }
+
     ~MynteyeRawData()
     {
         if(device != nullptr) 
@@ -39,21 +47,9 @@ class MynteyeRawData : public rclcpp::Node
         }
     }
 
-    MynteyeRawData() : Node("mynteye_raw_data"), qos_profile_(0), skip_tag_(-1), skip_tmp_left_tag_(0), skip_tmp_right_tag_(0)
-    {
-        unit_hard_time_ *= 10;
-        rosParameters();
-        initDevice();
-        pthread_mutex_init(&mutex_data_, nullptr);
-        createPublishers();
-        int frame_rate = device->GetOptionValue(Option::FRAME_RATE);
-        timer_ = this->create_wall_timer(std::chrono::milliseconds(1000 / frame_rate), std::bind(&MynteyeRawData::publishTopics, this));
-    }
-
   private:
     void rosParameters()
     {
-        request_index_ = 0;
         left_frame_id_ = "mynteye_left_frame";
         right_frame_id_ = "mynteye_right_frame";
         imu_frame_id_ = "mynteye_imu_frame";
@@ -72,47 +68,35 @@ class MynteyeRawData : public rclcpp::Node
           {Option::HDR_MODE, "hdr_mode"},
           {Option::ACCELEROMETER_RANGE, "accel_range"},
           {Option::GYROSCOPE_RANGE, "gyro_range"}};
-        qos_length_ = QOS_LENGTH;
-        ros_framerate_cut_ = ROS_FRAMERATE_CUT;
-
-        this->declare_parameter("request_index", request_index_);
+        
+        this->declare_parameter("request_index", 0);
         for(auto &&it = option_names_.begin(); it != option_names_.end(); ++it)
         {
             int value = -1;
             this->declare_parameter(it->second, value);
         }
-        this->declare_parameter("qos_length", qos_length_);
-        this->declare_parameter("ros_framerate_cut", ros_framerate_cut_);
+        this->declare_parameter("qos_length", QOS_LENGTH);
     }
 
     void initDevice()
     {   
         device = selectDevice();
-        RCLCPP_FATAL_EXPRESSION(this->get_logger(), device == nullptr, "No Supported Device found :(");
+        RCLCPP_FATAL_EXPRESSION(this->get_logger(), device == nullptr, "No MYNT EYE devices :(");
 
         auto &&requests = device->GetStreamRequests();
         std::size_t m = requests.size();
         RCLCPP_FATAL_EXPRESSION(this->get_logger(), m <= 0, "No MYNT EYE devices :(");
-
-        int request_index = 0;
+        int request_index;
         this->get_parameter("request_index", request_index);
-        if(m <= 1) 
+        if(m <= 1 || request_index >= m)
         {
-            RCLCPP_INFO(this->get_logger(),"Only one stream request, selecting index: 0");
+            RCLCPP_WARN(this->get_logger(), "Selecting stream, index: 0");
             device->ConfigStreamRequest(requests[0]);
         }
-        else 
+        else
         {
-            if(request_index >= m)
-            {
-                RCLCPP_WARN(this->get_logger(),"Request_index out of range");
-                device->ConfigStreamRequest(requests[0]);
-            }
-            else
-            {
-                RCLCPP_INFO(this->get_logger(),"Selecting stream, index: %d", request_index);
-                device->ConfigStreamRequest(requests[request_index]);
-            }
+            RCLCPP_INFO(this->get_logger(),"Selecting stream, index: %d", request_index);
+            device->ConfigStreamRequest(requests[request_index]);
         }
 
         for (auto &&it = option_names_.begin(); it != option_names_.end(); ++it)
@@ -128,14 +112,11 @@ class MynteyeRawData : public rclcpp::Node
             RCLCPP_INFO(this->get_logger(), "option::%s : %d", it->second.c_str(), device->GetOptionValue(it->first));
         }
 
-        int framerate_cut;
-        this->get_parameter("ros_framerate_cut", framerate_cut);
-        if(framerate_cut > 0 && framerate_cut < 7)
-        {
-            skip_tag_ = framerate_cut;
-        }
-
+        is_published_left_ = false;
+        is_published_right_ = false;
+        is_published_motion_ = false;
         is_started_ = false;
+        pthread_mutex_init(&mutex_data_, nullptr);
     }
 
     std::shared_ptr<Device> selectDevice()
@@ -144,7 +125,6 @@ class MynteyeRawData : public rclcpp::Node
         auto &&devices = context.devices();
 
         size_t n = devices.size();
-        RCLCPP_FATAL_EXPRESSION(this->get_logger(), n <= 0, "No MYNT EYE devices :(");
         for (size_t i = 0; i < n; i++)
         {
             auto &&device = devices[i];
@@ -182,27 +162,6 @@ class MynteyeRawData : public rclcpp::Node
                                             if(left_count_ > 10)
                                             {
                                                 rclcpp::Time stamp = checkUpTimeStamp(data.img->timestamp, Stream::LEFT);
-                                                if(skip_tag_ > 0)
-                                                {
-                                                    if(skip_tmp_left_tag_ == 0)
-                                                    {
-                                                        skip_tmp_left_tag_ = skip_tag_;
-                                                    }
-                                                    else
-                                                    {
-                                                        skip_tmp_left_tag_--;
-                                                        return;
-                                                    }
-                                                    if(left_timestamps_.size() < MATCH_CHECK_THRESHOLD)
-                                                    {
-                                                        left_timestamps_.insert(left_timestamps_.begin(), data.img->timestamp);
-                                                    }
-                                                    else
-                                                    {
-                                                        left_timestamps_.insert(left_timestamps_.begin(), data.img->timestamp);
-                                                        left_timestamps_.pop_back();
-                                                    }
-                                                }
                                                 publishImage(left_frame_id_, data, stamp);
                                             }
                                         });
@@ -217,47 +176,6 @@ class MynteyeRawData : public rclcpp::Node
                                             if(right_count_ > 10)
                                             {
                                                 rclcpp::Time stamp = checkUpTimeStamp(data.img->timestamp, Stream::RIGHT);
-                                                if(skip_tag_ > 0)
-                                                {
-                                                    if(skip_tmp_right_tag_ == 0)
-                                                    {
-                                                        skip_tmp_right_tag_ = skip_tag_;
-                                                    }
-                                                    else
-                                                    {
-                                                        skip_tmp_right_tag_--;
-                                                        return;
-                                                    }
-                                                    if(right_timestamps_.size() < MATCH_CHECK_THRESHOLD)
-                                                    {
-                                                        right_timestamps_.insert(right_timestamps_.begin(), data.img->timestamp);
-                                                    }
-                                                    else
-                                                    {
-                                                        right_timestamps_.insert(right_timestamps_.begin(), data.img->timestamp);
-                                                        right_timestamps_.pop_back();
-                                                        bool is_match = false;
-                                                        for(size_t i = 0; i < right_timestamps_.size(); i++)
-                                                        {
-                                                            for(size_t j = 0; j < left_timestamps_.size(); j++)
-                                                            {
-                                                                if(right_timestamps_[i] == left_timestamps_[j])
-                                                                {
-                                                                    is_match = true;
-                                                                    break;
-                                                                }
-                                                            }
-                                                            if(is_match)
-                                                            {
-                                                                break;
-                                                            }
-                                                        }
-                                                        if(!is_match)
-                                                        {
-                                                            skip_tmp_right_tag_++;
-                                                        }
-                                                    }
-                                                }
                                                 publishImage(right_frame_id_, data, stamp);
                                             }
                                         });
@@ -268,7 +186,6 @@ class MynteyeRawData : public rclcpp::Node
         {
             device->SetMotionCallback([this](const device::MotionData &data)
                                         {
-                                            rclcpp::Time stamp = checkUpImuTimeStamp(data.imu->timestamp);
                                             ++motion_count_;
                                             if (motion_count_ > 50 && data.imu)
                                             {
@@ -284,10 +201,9 @@ class MynteyeRawData : public rclcpp::Node
                                                 }
                                                 else
                                                 {
-                                                    publishImu(data, stamp);
-                                                    publishTemperature(data.imu->temperature, stamp);
+                                                    publishImu(*data.imu);
                                                 }
-                                                rclcpp::Rate rate(std::chrono::milliseconds(1));
+                                                rclcpp::Rate rate(std::chrono::microseconds(100));
                                                 rate.sleep();
                                             }
                                         });
@@ -334,19 +250,15 @@ class MynteyeRawData : public rclcpp::Node
         static bool isInited = false;
         static double soft_time_begin(0);
         static std::uint64_t hard_time_begin(0);
-        if (false == isInited)
+        if (isInited == false)
         {
             rclcpp::Clock clock_temp;
-            soft_time_begin = clock_temp.now().seconds();
+            soft_time_begin = clock_temp.now().nanoseconds();
             hard_time_begin = _hard_time;
             isInited = true;
         }
         std::uint64_t time_ns_detal = (_hard_time - hard_time_begin);
-        std::uint64_t time_ns_detal_s = time_ns_detal / 1000000;
-        std::uint64_t time_ns_detal_ns = time_ns_detal % 1000000;
-        double time_sec_double =
-        rclcpp::Time(time_ns_detal_s, time_ns_detal_ns * 1000).seconds();
-        return rclcpp::Time(soft_time_begin + time_sec_double);
+        return rclcpp::Time(soft_time_begin + time_ns_detal);
     }
 
     void publishImage(const std::string &frame_id, const device::StreamData &data, rclcpp::Time stamp)
@@ -360,36 +272,21 @@ class MynteyeRawData : public rclcpp::Node
         pthread_mutex_unlock(&mutex_data_);
         if(frame_id == "mynteye_left_frame")
         {
-            left_pub_->publish(std::move(msg));
+            left_pub_->publish(*msg);
         }
         else if(frame_id == "mynteye_right_frame")
         {
-            right_pub_->publish(std::move(msg));
+            right_pub_->publish(*msg);
         }  
     }
 
+    
     void publishImuBySync()
     {
         timestampAlign();
         for(int i = 0; i < imu_align_.size(); i++)
         {
-            rclcpp::Time stamp = checkUpImuTimeStamp(imu_align_[i].timestamp);
-            sensor_msgs::msg::Imu msg;
-            msg.header.stamp = stamp;
-            msg.header.frame_id = imu_frame_id_;
-            msg.linear_acceleration.x = imu_align_[i].accel[0] * gravity_;
-            msg.linear_acceleration.y = imu_align_[i].accel[1] * gravity_;
-            msg.linear_acceleration.z = imu_align_[i].accel[2] * gravity_;
-            msg.angular_velocity.x = imu_align_[i].gyro[0] * M_PI / 180;
-            msg.angular_velocity.y = imu_align_[i].gyro[1] * M_PI / 180;
-            msg.angular_velocity.z = imu_align_[i].gyro[2] * M_PI / 180;
-            for (int j = 0; j < 9; j++)
-            {
-                msg.linear_acceleration_covariance[j] = 0;
-                msg.angular_velocity_covariance[j] = 0;
-            }
-            imu_pub_->publish(std::move(msg));
-            publishTemperature(imu_align_[i].temperature, stamp);
+            publishImu(imu_align_[i]);
         }
     }
 
@@ -440,24 +337,26 @@ class MynteyeRawData : public rclcpp::Node
         }
     }
 
-    void publishImu(const device::MotionData &data, rclcpp::Time stamp)
+    void publishImu(const ImuData &data)
     {
+        rclcpp::Time stamp = checkUpImuTimeStamp(data.timestamp);
+        publishTemperature(data.temperature, stamp);
         if (this->count_subscribers("imu/data_raw") == 0) return;
         sensor_msgs::msg::Imu msg;
         msg.header.stamp = stamp;
         msg.header.frame_id = imu_frame_id_;
-        msg.linear_acceleration.x = data.imu->accel[0] * gravity_;
-        msg.linear_acceleration.y = data.imu->accel[1] * gravity_;
-        msg.linear_acceleration.z = data.imu->accel[2] * gravity_;
-        msg.angular_velocity.x = data.imu->gyro[0] * M_PI / 180;
-        msg.angular_velocity.y = data.imu->gyro[1] * M_PI / 180;
-        msg.angular_velocity.z = data.imu->gyro[2] * M_PI / 180;
-        for (int i = 0; i < 9; i++)
+        msg.linear_acceleration.x = data.accel[0] * gravity_;
+        msg.linear_acceleration.y = data.accel[1] * gravity_;
+        msg.linear_acceleration.z = data.accel[2] * gravity_;
+        msg.angular_velocity.x = data.gyro[0] * M_PI / 180;
+        msg.angular_velocity.y = data.gyro[1] * M_PI / 180;
+        msg.angular_velocity.z = data.gyro[2] * M_PI / 180;
+        for (int j = 0; j < 9; j++)
         {
-            msg.linear_acceleration_covariance[i] = 0;
-            msg.angular_velocity_covariance[i] = 0;
+            msg.linear_acceleration_covariance[j] = 0;
+            msg.angular_velocity_covariance[j] = 0;
         }
-        imu_pub_->publish(std::move(msg));
+        imu_pub_->publish(msg);
     }
 
     void publishTemperature(float temperature, rclcpp::Time stamp)
@@ -468,20 +367,17 @@ class MynteyeRawData : public rclcpp::Node
         msg.header.frame_id = temperature_frame_id_;
         msg.temperature = temperature;
         msg.variance = 0;
-        temperature_pub_->publish(std::move(msg));
+        temperature_pub_->publish(msg);
     }
 
     std::uint64_t unit_hard_time_ = std::numeric_limits<std::uint32_t>::max();
 
-    int request_index_;
     std::string left_frame_id_;
     std::string right_frame_id_;
     std::string imu_frame_id_;
     std::string temperature_frame_id_;
     double gravity_;
     std::map<Option, std::string> option_names_;
-    int qos_length_;
-    int ros_framerate_cut_;
 
     std::shared_ptr<Device> device;
 
@@ -492,22 +388,17 @@ class MynteyeRawData : public rclcpp::Node
     rclcpp::Publisher<sensor_msgs::msg::Temperature>::SharedPtr temperature_pub_;
     rclcpp::TimerBase::SharedPtr timer_;
 
-    bool is_published_left_ = false;
-    bool is_published_right_ = false;
-    bool is_published_motion_= false;
+    bool is_published_left_;
+    bool is_published_right_;
+    bool is_published_motion_;
     std::size_t left_count_ = 0;
     std::size_t right_count_ = 0;
     std::size_t motion_count_ = 0;
-    int skip_tag_;
-    int skip_tmp_left_tag_;
-    int skip_tmp_right_tag_;
-    std::vector<int64_t> left_timestamps_;
-    std::vector<int64_t> right_timestamps_;
     std::vector<ImuData> imu_align_;
     std::shared_ptr<ImuData> imu_accel_;
     std::shared_ptr<ImuData> imu_gyro_;
     bool is_started_;
-
+    
     pthread_mutex_t mutex_data_;
 };
 
