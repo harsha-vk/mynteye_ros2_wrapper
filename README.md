@@ -75,8 +75,8 @@ ros2 launch mynteye.launch.py
 
 Open new tab in terminal to run mynteye calibration.
 
-    ```bash
-    cd dev_ws
-    . install/setup.bash
-    ros2 launch mynteye_calib.launch.py
-    ```
+```bash
+cd dev_ws
+. install/setup.bash
+ros2 launch mynteye_calib.launch.py
+```
