@@ -16,7 +16,18 @@ def generate_launch_description():
                      output = 'screen',
                      emulate_tty=True,
                      parameters = [config_path])
-
+    disp_node = Node(package = 'stereo_image_proc',
+                     node_executable = 'disparity_node',
+                     output = 'screen',
+                     emulate_tty=True,
+                     parameters = [config_path])
+    view_node = Node(package = 'image_view',
+                     node_executable = 'disparity_view',
+                     output = 'screen',
+                     emulate_tty=True,
+                     remappings=[('/image', '/disparity')])
     ld.add_action(base_node)
     ld.add_action(rect_node)
+    ld.add_action(disp_node)
+    ld.add_action(view_node)
     return ld

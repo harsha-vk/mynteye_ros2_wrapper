@@ -93,7 +93,7 @@ class MynteyeRectification(Node):
             self.camera_info_right.p = P2.flatten().tolist()
             self.camera_info_left.header.frame_id = 'right_frame_id'
 
-            self.do_once == True
+            self.do_once = True
 
         left_img_rect = cv2.remap(left_img_raw, self.mapx_left, self.mapy_left, cv2.INTER_LINEAR, cv2.BORDER_CONSTANT)
         right_img_rect = cv2.remap(right_img_raw, self.mapx_right, self.mapy_right, cv2.INTER_LINEAR, cv2.BORDER_CONSTANT)

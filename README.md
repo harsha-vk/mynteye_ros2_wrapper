@@ -53,11 +53,16 @@ This Repository contains ROS2 wrapper for MYNT EYE stereo camera.
 ## Setup MYNT EYE ROS2 Wrapper
 
 ```bash
+sudo apt-get install ros-eloquent-camera-info-manager ros-eloquent-launch-testing-ament-cmake
 mkdir dev_ws
+cd dev_ws
 mkdir src
-cd dev_ws/src
+cd src
 git clone https://github.com/harsha-vk/mynteye_ros2_wrapper
-cd ../
+git clone https://github.com/ros-perception/image_pipeline.git
+cd image_pipeline
+git checkout dashing
+cd ../../
 colcon build
 ```
 
@@ -67,6 +72,7 @@ Open new tab in terminal to run mynteye camera.
 
 ```bash
 cd dev_ws
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 . install/setup.bash
 ros2 launch mynteye_ros2_wrapper mynteye.launch.py
 ```
@@ -77,6 +83,13 @@ Open new tab in terminal to run mynteye calibration.
 
 ```bash
 cd dev_ws
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 . install/setup.bash
 ros2 launch mynteye_ros2_wrapper mynteye_calib.launch.py
 ```
+
+- ros2 run stereo_image_proc disparity_node
+- ros2 run image_view disparity_view --ros-args --remap image:=/disparity
+- ros2 run rqt_reconfigure rqt_reconfigure
+
+
