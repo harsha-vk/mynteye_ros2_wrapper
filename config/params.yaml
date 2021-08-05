@@ -109,10 +109,10 @@ mynteye_rectification:
         - 0.0002773141199299774
         - 0.9998187181851986
 disparity_node:
-  ros_parameters:
+  ros__parameters:
     disparity_range: 80
     min_disparity: 32
-    speckle_range: 400
-    speckle_size: 16
+    speckle_range: 16
+    speckle_size: 400
 
 

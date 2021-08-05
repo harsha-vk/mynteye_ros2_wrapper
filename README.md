@@ -87,9 +87,3 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 . install/setup.bash
 ros2 launch mynteye_ros2_wrapper mynteye_calib.launch.py
 ```
-
-- ros2 run stereo_image_proc disparity_node
-- ros2 run image_view disparity_view --ros-args --remap image:=/disparity
-- ros2 run rqt_reconfigure rqt_reconfigure
-
-
