@@ -36,7 +36,7 @@ This Repository contains ROS2 wrapper for MYNT EYE stereo camera.
     sudo rosdep init
     rosdep update
 
-    echo "source /opt/ros/dashing/setup.bash" >> ~/.bashrc
+    echo "source /opt/ros/eloquent/setup.bash" >> ~/.bashrc
     ```
 
 2. Install Mynt EYE S SDK by following the instructions below.
